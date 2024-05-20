@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+</head>
+<body>
+    <h1>Profile Page</h1>
+    <button id="register-passkey-btn" type="button">Register Passkey</button>
+
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <script>
+        const registerPassKeyBtn = document.getElementById('register-passkey-btn');
+        registerPassKeyBtn.addEventListener('click', async (e) => {
+            // fetching userId From url
+            const url = new URL(window.location);
+            const userId = url.searchParams.get('userId');
+            
+            const response = await fetch('/register-challenge', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body:JSON.stringify({userId})
+            }) // create challenge req
+
+            const challengeResult = await response.json();
+            
+            const {options} = challengeResult; // server side challenge (challenge created)
+            
+            const authenticationResult = await SimpleWebAuthnBrowser.startRegistration(options); // creating public key using device private key(open popup for fingerprint, facelock)
+            console.log(authenticationResult);
+
+            await fetch('/register-verify', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body:JSON.stringify({userId, cred:authenticationResult})
+            }) // send public key backend because again login time verification use
+
+
+        })
+
+    </script>
+</body>
+</html>
